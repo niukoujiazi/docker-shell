@@ -23,14 +23,14 @@ SCRIPT_COMMIT_SHA=40b1b76
 #   * edge
 #   * test
 #   * experimental
-DEFAULT_CHANNEL_VALUE="edge"
-#DEFAULT_CHANNEL_VALUE="stable"
+#DEFAULT_CHANNEL_VALUE="edge"
+DEFAULT_CHANNEL_VALUE="stable"
 if [ -z "$CHANNEL" ]; then
 	CHANNEL=$DEFAULT_CHANNEL_VALUE
 fi
 
-DEFAULT_DOWNLOAD_URL="https://download.docker.com"
-#DEFAULT_DOWNLOAD_URL="https://mirrors.ustc.edu.cn/docker-ce/"
+#DEFAULT_DOWNLOAD_URL="https://download.docker.com"
+DEFAULT_DOWNLOAD_URL="https://mirrors.ustc.edu.cn/docker-ce/"
 if [ -z "$DOWNLOAD_URL" ]; then
 	DOWNLOAD_URL=$DEFAULT_DOWNLOAD_URL
 fi
@@ -71,28 +71,44 @@ command_exists() {
 	command -v "$@" > /dev/null 2>&1
 }
 
-install_compose() {
-	# pull image
-	if [ ! -d /etc/docker ]; then mkdir /etc/docker ; fi
-	if [ ! -d /etc/default/docker ]; then mkdir /etc/default/; fi
-	echo "DOCKER_OPTS=\"--registry-mirror=https://registry.docker-cn.com --insecure-registries=47.107.136.215:5000a\"" >> /etc/default/docker
-	echo "{"registry-mirror": ["https://registry.docker-cn.com"],"insecure-registries":["139.199.9.116:5000","47.107.136.215:5000"]}" > /etc/docker/daemon.json
-	systemctl enable docker
-	systemctl restart docker
-	docker pull 47.107.136.215:5000/jyt:21.2
-	docker run -dit --name jyt 47.107.136.215:5000/jyt:21.2
-	docker cp jyt:/jytconf/ ./
-	cd jytconf
-	cat compose.sh > /usr/local/bin/docker-compose
-	chmod +x /usr/local/bin/docker-compose
-	echo -e "Please enter Django's ALLOWED_HOSTS_ENV \nThe format is ‘0.0.0.0’:"
-	read SERVER_HOSTS
-	jy="DB_HOSTS_ENV=db\nREDIS_HOSTS_ENV=redis\nALLOWED_HOSTS_ENV=$SERVER_HOSTS"
-	echo -e $con > jyt.env
-	docker container stop jyt
-	docker container rm jyt
-	docker network create -d bridge jyt-net
+re_docker() {
+        sudo systemctl enable docker
+        sudo systemctl restart docker
+        if [ ! $? -ne 0 ] 
+        then
+                sudo systemctl reset-failed docker.service
+        fi
 }
+install_compose() {
+        echo "修改配置"
+        if [ ! -d /etc/docker ]; then mkdir /etc/docker ; fi
+        if [ ! -d /etc/default/ ]; then mkdir /etc/default/; fi
+        echo "DOCKER_OPTS=\"--registry-mirror=https://registry.docker-cn.com --insecure-registries=47.107.136.215:5000a\"" >> /etc/default/docker
+        echo -e "{\n    \"registry-mirror\": [\"https://registry.docker-cn.com\"],\n    \"insecure-registries\": [\"47.107.136.215:5000\"]\n} "> /etc/docker/daemon.json
+    echo "重启docker"
+        re_docker
+    echo "拉取镜像"
+        sudo docker pull 47.107.136.215:5000/jyt:21.2
+    echo "运行并拷贝镜像中内容"
+        sudo docker run -dit --name jyt 47.107.136.215:5000/jyt:21.2
+        sudo docker cp jyt:/jytconf/ ./
+    echo "二进制安装docker-compsoe"
+        cat ./jytconf/compose.sh > /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+    echo "修改django hosts"
+        echo -e "Please enter Django's ALLOWED_HOSTS_ENV \nThe format is ‘0.0.0.0’:"
+        read SERVER_HOSTS
+        con="DB_HOSTS_ENV=db\nREDIS_HOSTS_ENV=redis\nALLOWED_HOSTS_ENV=$SERVER_HOSTS"
+        echo -e $con > ./jytconf/jyt.env
+    echo "删除中间容器"
+        sudo docker container stop jyt
+        sudo docker container rm jyt
+        sudo docker network create -d bridge jyt-net 2> /dev/null
+        echo -e "{\n    \"registry-mirror\": [\"https://registry.docker-cn.com\"],\n} "> /etc/docker/daemon.json
+    echo "完成安装"
+    exit 0
+}
+
 is_dry_run() {
 	if [ -z "$DRY_RUN" ]; then
 		return 1
