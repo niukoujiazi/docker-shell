@@ -84,13 +84,13 @@ install_compose() {
         if [ ! -d /etc/docker ]; then mkdir /etc/docker ; fi
         if [ ! -d /etc/default/ ]; then mkdir /etc/default/; fi
         echo "DOCKER_OPTS=\"--registry-mirror=https://registry.docker-cn.com --insecure-registries=47.107.136.215:5000a\"" >> /etc/default/docker
-        echo -e "{\n    \"registry-mirror\": [\"https://registry.docker-cn.com\"],\n    \"insecure-registries\": [\"47.107.136.215:5000\"]\n} "> /etc/docker/daemon.json
+        echo -e "{\n    \"registry-mirror\": [\"https://registry.docker-cn.com\"],\n    \"insecure-registries\": []\n} "> /etc/docker/daemon.json
     echo "重启docker"
         re_docker
     echo "拉取镜像"
-        sudo docker pull 47.107.136.215:5000/jyt:21.2
+        sudo docker pull jytdocker.top/iot/iot:latest
     echo "运行并拷贝镜像中内容"
-        sudo docker run -dit --name jyt 47.107.136.215:5000/jyt:21.2
+        sudo docker run -dit --name jyt jytdocker.top/iot/iot:latest
         sudo docker cp jyt:/jytconf/ ./
     echo "二进制安装docker-compsoe"
         cat ./jytconf/compose.sh > /usr/local/bin/docker-compose
