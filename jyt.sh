@@ -83,7 +83,7 @@ install_compose() {
         echo "修改配置"
         if [ ! -d /etc/docker ]; then mkdir /etc/docker ; fi
         if [ ! -d /etc/default/ ]; then mkdir /etc/default/; fi
-        echo "DOCKER_OPTS=\"--registry-mirror=https://registry.docker-cn.com --insecure-registries=47.107.136.215:5000a\"" >> /etc/default/docker
+        echo "DOCKER_OPTS=\"--registry-mirror=https://registry.docker-cn.com --insecure-registries=jytdocker.top\"" >> /etc/default/docker
         echo -e "{\n    \"registry-mirror\": [\"https://registry.docker-cn.com\"],\n    \"insecure-registries\": []\n} "> /etc/docker/daemon.json
     echo "重启docker"
         re_docker
